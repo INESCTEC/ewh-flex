@@ -17,6 +17,11 @@ thermoelectric water heaters based on consumption data analysis.
 Preliminary documentation available at the project ``docs/`` directory.
 It includes the optimization documentation including mathematical formulation.
 
+For a preview of an example REST API for this service, check:
+
+[ewh-flex-rest-api](https://github.com/CPES-Power-and-Energy-Systems/ewh-flex-rest-api)
+
+[ewh-flex-rest-api Swagger](https://cpes-power-and-energy-systems.github.io/ewh-flex-rest-api/)
 
 ***
 
