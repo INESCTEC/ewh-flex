@@ -1,5 +1,9 @@
-matplotlib==3.8.2
-numpy==1.26.2
-pandas==2.1.4
-PuLP @ git+https://github.com/coin-or/pulp@858304d3439bbdd46a42a8be3d0c56ab407022c9
-scikit-learn==1.3.2
+matplotlib==3.9.0
+numpy==1.26.4
+pandas==2.2.2
+plotly==5.22.0
+PuLP==2.8.0
+pytest==8.2.2
+scikit-learn==1.5.0
+streamlit==1.36.0
+tsg-client @ git+https://github.com/CPES-Power-and-Energy-Systems/tsg-client.git

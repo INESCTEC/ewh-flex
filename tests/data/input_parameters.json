@@ -1,0 +1,19 @@
+{
+  "user": "sample_user",
+  "datetime_start": "2022-12-07T00:00:00.000Z",
+  "datetime_end": "2022-12-13T23:59:00.000Z",
+  "load_diagram_exists": 0,
+  "ewh_specs": {
+    "ewh_capacity": 100,
+    "ewh_power": 1800,
+    "ewh_max_temp": 80,
+    "user_comf_temp": 40,
+	"tariff": 1,
+	"price_simple": 0.119585,
+	"price_dual_day": 0.149118,
+	"price_dual_night": 0.070511,
+	"tariff_simple": 0.3604,
+	"tariff_dual": 0.4285
+  }
+}
+

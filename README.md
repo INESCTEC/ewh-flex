@@ -17,11 +17,6 @@ thermoelectric water heaters based on consumption data analysis.
 Preliminary documentation available at the project ``docs/`` directory.
 It includes the optimization documentation including mathematical formulation.
 
-For a preview of an example REST API for this service, check:
-
-[ewh-flex-rest-api](https://github.com/CPES-Power-and-Energy-Systems/ewh-flex-rest-api)
-
-[ewh-flex-rest-api Swagger](https://cpes-power-and-energy-systems.github.io/ewh-flex-rest-api/)
 
 ***
 
@@ -36,13 +31,16 @@ With a local python interpreter, you'll need to manually install dependencies:
 1. Install the python dependencies
     > pip install -r requirements.txt
 
-2. Install the `ewh-flex` Python library
-    > pip install .
-   
-3. **HiGHS Solver Integration**
+2. **HiGHS Solver Integration**
 
     When opting for the HiGHS solver in the optimization settings, please note that external binary files are required for 
-seamless functionality. To utilize this solver, download the necessary files from the [HiGHS project and releases repository](https://github.com/JuliaBinaryWrappers/HiGHSstatic_jll.jl/releases)  and specify their location in the designated path for optimal performance.
+seamless functionality. This library already includes the HiGHS binaries from v1.7.0. To update to the latest binaries, 
+visit the [HiGHS project and releases repository](https://github.com/JuliaBinaryWrappers/HiGHSstatic_jll.jl/releases)  and specify their location in the designated path for optimal performance.
+
+
+3. Carry the included tests to verify the installation (optional)
+   > pytest
+   
 
 ***
 
@@ -50,7 +48,18 @@ seamless functionality. To utilize this solver, download the necessary files fro
 
 The tool is designed to effortlessly process two primary inputs: the EWH load diagram and a set
 of specified parameters. Upon providing these inputs, the tool seamlessly channels them through a dedicated optimization
-pipeline. The results, refined through the optimization process, can then be plotted and exported.
+pipeline. The results, refined through the optimization process, can then be plotted and exported. The end-user can run
+the application directly using a Graphical User Interface (GUI), or manually via an IDE, or a Python terminal.
+
+
+### Using the GUI:
+
+* After setting up the library, just start the Streamlit GUI via:
+    > streamlit run main_gui.py
+* The GUI should open automatically in your browser. The URL is also shown in the console, defaulted as http://localhost:8501
+
+
+### Using an IDE / Python Terminal:
 
 * Find comprehensive guidance in the ``/examples`` folder, which not only contains sample input data but also showcases 
 exemplar run code (via ``/examples/ewh_opt_example.py``) for a seamless start to the project.
@@ -66,9 +75,17 @@ there is a set of optional but recommended inputs that should be addressed in th
 
 ### Mandatory inputs
 
-To utilize this tool effectively, users are required to provide an Electric Water Heater (EWH) dataset in JSON format,
-comprising only timestamps and electrical consumption data (in watts) with minute resolution. An illustrative example 
-file can be found in the 'data' folder for reference (``data_example_7_days.json``).
+The current version allows two alternatives:
+
+1. To utilize this tool effectively, users are required to provide an Electric Water Heater (EWH) dataset in JSON format,
+comprising only timestamps and electrical consumption data (in watts) with minute resolution. From this standpoint, the 
+water usage calendar is detected using the built-in load-to-usage converter. An illustrative example file can be found in the 'data' folder for reference (``data_example_7_days.json``).
+
+
+2. As an alternative, the user can provide only some water usage calendar (e.g. baths), including the start period and
+respective duration. From this standpoint, the estimated read load diagram is created by a built-in usage-to-load converter.
+An illustrative example file can be found in the 'data' folder for reference (``input_data.json``).
+
 
 ### Optional (but recommended) inputs
 
@@ -76,6 +93,7 @@ For enhanced customization and precision, the tool allows users to provide optio
 * ``ewh_capacity``: EWH capacity (l)
 * ``ewh_power``: EWH heating power (W)
 * ``ewh_max_temp``: EWH maximum allowed water temperature (°C)
+* ``ewh_std_temp``: EWH standard non-optimized functioning water temperature (°C)
 * ``user_comf_temp``: Hot-Water Usage Comfort Temperature (minimum user-defined temperature - °C)
 * ``tariff``: Tariff selection between simple (1) or dual (2)
 * ``price_simple``: Simple pricing value per kWh (Euro)
@@ -91,10 +109,12 @@ If the requester does not provide optional inputs, the default values, as shown 
   "user": "sample_user",
   "datetime_start": "2022-12-07T00:00:00.000Z",
   "datetime_end": "2022-12-13T23:59:00.000Z",
+  "load_diagram_exists": 1,
   "ewh_specs": {
     "ewh_capacity": 100,
     "ewh_power": 1800,
     "ewh_max_temp": 80,
+    "ewh_std_temp": 60,
     "user_comf_temp": 40,
 	"tariff": 1,
 	"price_simple": 0.119585,
@@ -241,6 +261,12 @@ mathematical concepts for robust optimization:
      - EWH overall heat transfer coefficient (0.00125 kW/(m2*K))
      - EWH height (100 cm)
      - Total flow rate (8.5 l/min)
+
+The current version also allows a built-in optimization resolution resampling from 1-min to 15-min or 1-hour, that should be addressed 
+in the ``resample`` parameter from ``ewh_optimization`` function. Please do note that, while it resamples the data to 15-min/1-hour
+resolution, the provided data should always respect the 1-min resolution, in order to guarantee a proper load-to-usage 
+conversion.
+
 
 
 ***

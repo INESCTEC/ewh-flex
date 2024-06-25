@@ -13,8 +13,12 @@ This program makes use and is distributed with the following libraries:
 * NumPy (https://github.com/numpy/numpy)
 * matplotlib (https://github.com/matplotlib/matplotlib)
 * pandas (https://github.com/pandas-dev/pandas)
+* plotly (https://github.com/plotly/plotly.py)
 * PuLP (https://github.com/coin-or/pulp)
+* pytest (https://github.com/pytest-dev/pytest)
 * scikit-learn (https://github.com/scikit-learn/scikit-learn)
+* Streamlit (https://github.com/streamlit/streamlit)
+* tsg-client (https://github.com/CPES-Power-and-Energy-Systems/tsg-client)
 
 
 A commercial license is also available for use in industrial projects and collaborations that do not wish to use the AGPL v3 license. 
