@@ -46,6 +46,7 @@ def read_data(paramsInput_filePath, dataset_filePath):
 def gui_data(guiBackpack):
 
     inputType = guiBackpack['inputType']
+    pricing_choice = guiBackpack['pricing_choice']
 
     if (inputType == 'Data Space'):
         endpoint = guiBackpack['endpoint']
@@ -100,6 +101,21 @@ def gui_data(guiBackpack):
             "tariff_dual": guiBackpack['tariff_dual']
         }
     }
+
+    if (pricing_choice == "Upload pricing diagram"):
+        price_dynamic = guiBackpack['price_dynamic']
+        if price_dynamic.type == 'application/json':
+            price_dynamic = pd.read_json(price_dynamic, convert_dates=False)
+        else:
+            price_dynamic = pd.read_csv(price_dynamic)
+            # rename the two column
+        price_dynamic.columns = ['timestamp', 'price']
+        try:
+            price_dynamic['timestamp'] = pd.to_datetime(price_dynamic['timestamp'], utc=True)
+        except:
+            price_dynamic['timestamp'] = pd.to_datetime(price_dynamic['timestamp'], dayfirst=True, utc=True)
+
+        paramsInput['ewh_specs']['price_dynamic'] = price_dynamic
 
     return dataset, paramsInput
 

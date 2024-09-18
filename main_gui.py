@@ -68,21 +68,39 @@ user_comf_temp = st.number_input('Hot-Water Usage Comfort Temperature (°C)', va
 if ((user_comf_temp >= 20) & (user_comf_temp <= 60)) == False:
     st.error("Enter a value between 20 and 60")
 
-tariff_selector = st.selectbox('Simple or Dual Daily Tariff', ('Simple','Dual'))
-if tariff_selector == 'Simple':
-    tariff = 1
-    price_simple = st.number_input('Price per kWh (€)', value=0.12)
-    tariff_simple = st.number_input('Daily Tariff (€)', value=0.36)
+
+pricing_choice = st.radio(
+        "Pricing Source",
+        ["Price per kWh & Daily Tariff (€)", "Upload pricing diagram"],
+        captions=("Select between daily/dual tariff, and provide pricing per kWh and daily access tariff.",
+                  "Upload a JSON/CSV file comprising only timestamp and price data. Must respect the EWH load period length and resolution."))
+
+if pricing_choice == "Price per kWh & Daily Tariff (€)":
+    pricing_choice = 'fixed'
+    tariff_selector = st.selectbox('Simple or Dual Daily Tariff', ('Simple', 'Dual'))
+    if tariff_selector == 'Simple':
+        tariff = 1
+        price_simple = st.number_input('Price per kWh (€)', value=0.12)
+        tariff_simple = st.number_input('Daily Tariff (€)', value=0.36)
+        price_dual_day = 0
+        price_dual_night = 0
+        tariff_dual = 0
+    else:
+        tariff = 2
+        price_dual_day = st.number_input('Price per kWh during the day period (€)', value=0.15)
+        price_dual_night = st.number_input('Price per kWh during the night period (€)', value=0.08)
+        tariff_dual = st.number_input('Daily Tariff', value=0.43)
+        price_simple = 0
+        tariff_simple = 0
+if pricing_choice == "Upload pricing diagram":
+    price_dynamic = st.file_uploader("Choose a file", key='price_dynamic')
+    price_simple = 0
     price_dual_day = 0
     price_dual_night = 0
     tariff_dual = 0
-else:
-    tariff = 2
-    price_dual_day = st.number_input('Price per kWh during the day period (€)', value=0.15)
-    price_dual_night = st.number_input('Price per kWh during the night period (€)', value=0.08)
-    tariff_dual = st.number_input('Daily Tariff', value=0.43)
-    price_simple = 0
     tariff_simple = 0
+    tariff = 3
+
 
 st.divider()
 
@@ -118,7 +136,7 @@ if (inputType == 'Data Space'):
         endpoint = 'sel'
 
     ## token input
-    user_id = st.text_input("User ID", "Replace with user ID, e.g.: 12340abcd")
+    user_id = st.text_input("User Access Token", "Replace with user access token, e.g.: 123456abcdef")
 
     ## date input
     today = datetime.datetime.today()
@@ -143,7 +161,7 @@ if (inputType == 'Data Space'):
 
 
 elif (inputType == 'Upload JSON/CSV'):
-    dataset = st.file_uploader("Choose a file")
+    dataset = st.file_uploader("Choose a file", key='dataset')
     load_diagram_exists = 1
 
 elif (inputType == 'Hot-Water Usage Example'):
@@ -176,6 +194,12 @@ if 'dataset' in locals():
         if ((dataset.type == 'application/json') | (dataset.type == 'text/csv')) == False:
             st.error(f"Please upload the dataset in JSON or CSV format!")
 
+if 'price_dynamic' in locals():
+    if price_dynamic is not None:
+        if ((price_dynamic.type == 'application/json') | (price_dynamic.type == 'text/csv')) == False:
+            st.error(f"Please upload the dataset in JSON or CSV format!")
+
+
 with st.form(key='form'):
     if (inputType == 'Upload JSON/CSV'):
         if dataset is None:
@@ -202,6 +226,9 @@ guiBackpack['tariff_simple'] = tariff_simple
 guiBackpack['price_dual_day'] = price_dual_day
 guiBackpack['price_dual_night'] = price_dual_night
 guiBackpack['tariff_dual'] = tariff_dual
+guiBackpack['pricing_choice'] = pricing_choice
+if pricing_choice == "Upload pricing diagram":
+    guiBackpack['price_dynamic'] = price_dynamic
 if inputType == 'Data Space':
     guiBackpack['endpoint'] = endpoint
     guiBackpack['inputType'] = 'Data Space'
@@ -222,6 +249,8 @@ if 'dataset' in locals():
 guiBackpack['session_state'] = st.session_state
 if 'num_rows' in locals():
     guiBackpack['num_rows'] = num_rows
+
+
 
 
 if submit_button:

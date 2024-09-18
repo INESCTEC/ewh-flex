@@ -5,7 +5,7 @@ from .ewh_opt_functions import (resample_data, build_varBackpack, update_dataset
 ##      Optimization Pipeline Function      ##
 ##############################################
 
-def ewh_optimization(params_input, dataset, resample = 'n', optSolver = 'HiGHS', solverPath=None):
+def ewh_optimization(params_input, dataset, resample = 'no', optSolver = 'HiGHS', solverPath=None):
     varBackpack = build_varBackpack(params_input, dataset)
     if varBackpack['load_diagram_exists'] == 0:
         dataset = create_usage_dataset(dataset)
@@ -14,7 +14,7 @@ def ewh_optimization(params_input, dataset, resample = 'n', optSolver = 'HiGHS',
         dataset['delta_use'] = convert_load_usage(dataset, varBackpack)
     if resample != 'no':
         dataset = resample_data(dataset, resolution=resample)
-    dataset, varBackpack = update_dataset_backpack(dataset, varBackpack)
+    dataset, varBackpack = update_dataset_backpack(dataset, varBackpack, resample)
     varBackpack = linear_regressors(dataset, varBackpack)
     opt_output = ewh_solver(dataset, varBackpack, optSolver=optSolver, solverPath=solverPath)
 

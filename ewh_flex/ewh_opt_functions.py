@@ -56,6 +56,9 @@ def build_varBackpack(paramsInput, dataset):
     ewh_std_temp = paramsInput['ewh_specs']['ewh_std_temp']
     # Variable that flags if real load dataset exists
     load_diagram_exists = paramsInput['load_diagram_exists']
+    # Tariff selection
+    tariff = paramsInput['ewh_specs']['tariff']
+
 
     # Heating power of the EWH (kw) with 90% efficiency
     if (ewh_power_original > 250) & (ewh_power_original < 5000):
@@ -153,6 +156,11 @@ def build_varBackpack(paramsInput, dataset):
     varBackpack['tariff_simple'] = paramsInput['ewh_specs']['tariff_simple']
     varBackpack['tariff_dual'] = paramsInput['ewh_specs']['tariff_dual']
 
+    if tariff == 3:
+        varBackpack['price_dynamic'] = paramsInput['ewh_specs']['price_dynamic']['price']
+    else:
+        varBackpack['price_dynamic'] = 0
+
     return varBackpack
 
 
@@ -189,7 +197,7 @@ def resample_data(dataset, resolution='15m'):
 ##############################################
 ##            Additional Data               ##
 ##############################################
-def update_dataset_backpack(dataset, varBackpack):
+def update_dataset_backpack(dataset, varBackpack, resample):
 
     # unpack some variables
     ewh_capacity = varBackpack['ewh_capacity']
@@ -200,6 +208,7 @@ def update_dataset_backpack(dataset, varBackpack):
     price_simple = varBackpack['price_simple']
     price_dual_day = varBackpack['price_dual_day']
     price_dual_night = varBackpack['price_dual_night']
+    price_dynamic = varBackpack['price_dynamic']
     tariff = varBackpack['tariff']
     wh_min = varBackpack['wh_min']
     wh_max = varBackpack['wh_max']
@@ -237,6 +246,7 @@ def update_dataset_backpack(dataset, varBackpack):
     dataset.loc[(dataset['timestamp'].dt.hour >= 0) & (dataset['timestamp'].dt.hour < 8), 'price2'] = price_dual_night
     dataset.loc[(dataset['timestamp'].dt.hour >= 22) & (dataset['timestamp'].dt.hour <= 23), 'price2'] = price_dual_night
     dataset.loc[(dataset['timestamp'].dt.hour >= 8) & (dataset['timestamp'].dt.hour < 22), 'price2'] = price_dual_day
+    dataset['price3'] = price_dynamic
 
     # create variables from dataset
     flow_rate = list(dataset.flow_rate)
@@ -246,9 +256,22 @@ def update_dataset_backpack(dataset, varBackpack):
     if tariff == 1:
         networkTariff = varBackpack['tariff_simple']
         networkPrice = list(dataset.price1)
-    else:
+    if tariff == 2:
         networkTariff = varBackpack['tariff_dual']
         networkPrice = list(dataset.price2)
+    if tariff == 3:
+
+        # check if resampling is needed
+        if resample != 'no':
+
+            if resample == '15m':
+                resolution = '15T'
+            if resample == '1h':
+                resolution = '1H'
+            # Resample the dynamic pricing column to 15-minute/1h intervals via average
+            price_dynamic = price_dynamic.resample(resolution).mean()
+        networkTariff = 0
+        networkPrice = list(price_dynamic)
 
     # update and add some backpack variables
 
@@ -489,13 +512,18 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
     milp.writeLP('thermo_milp.lp')
 
     #time limit depends on simulated days plus 1 minute
-    timeLimit = (daySim * 10) + 60
-
+    timeLimit = (daySim * 30) + 60
+    if daySim > 35:
+        gapRel = 0.05
+    else:
+        gapRel = 0.015
 
     if (optSolver == 'HiGHS'):
         solver = getSolver('HiGHS_CMD', msg=True, timeLimit=timeLimit, path=solverPath, gapRel=0.015, threads=1)
     if (optSolver == 'CBC'):
-        solver = getSolver('PULP_CBC_CMD', msg=True, timeLimit=timeLimit, gapRel=0.015)
+        solver = getSolver('PULP_CBC_CMD', msg=True, timeLimit=timeLimit, gapRel=gapRel)
+
+    print('Running optimization for ' + str(daySim) + ' days.')
 
     milp.solve(solver)
     # -- LpStatus is a dictionary with the status of solution:
@@ -564,11 +592,12 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
     optimized_price = sum(opt_diagrams['price'])
     ## original load
     original_load = (dataset['load'].sum()/1000) * (1/60)
+    original_load_list = (dataset['load'] / 1000) * (1 / 60)
     ## original price
     ## network price per minute
     networkTariff_minute = networkTariff * (delta_t/24)
     networkTariff_used = networkTariff_minute * len(dataset)
-    original_price = original_load * dataset.price1[0] + networkTariff_used
+    original_price = sum(original_load_list * networkPrice) + networkTariff_used
 
 
     print("Simulated Period:", str(datetime.timedelta(minutes=len(dataset))))
