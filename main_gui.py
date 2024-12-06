@@ -6,7 +6,7 @@ from ewh_flex import is_valid_time_format
 import streamlit as st
 import datetime
 import json
-
+import pandas as pd
 
 
 ##############################################
@@ -71,10 +71,19 @@ if ((user_comf_temp >= 20) & (user_comf_temp <= 60)) == False:
 
 pricing_choice = st.radio(
         "Pricing Source",
-        ["Price per kWh & Daily Tariff (€)", "Upload pricing diagram"],
-        captions=("Select between daily/dual tariff, and provide pricing per kWh and daily access tariff.",
+        ["None", "Price per kWh & Daily Tariff (€)", "Upload pricing diagram"],
+        captions=("Run optimization based only on energy consumption.",
+                  "Select between daily/dual tariff, and provide pricing per kWh and daily access tariff.",
                   "Upload a JSON/CSV file comprising only timestamp and price data. Must respect the EWH load period length and resolution."))
 
+
+if pricing_choice == "None":
+    tariff = 0
+    price_simple = 0
+    tariff_simple = 0
+    price_dual_day = 0
+    price_dual_night = 0
+    tariff_dual = 0
 if pricing_choice == "Price per kWh & Daily Tariff (€)":
     pricing_choice = 'fixed'
     tariff_selector = st.selectbox('Simple or Dual Daily Tariff', ('Simple', 'Dual'))
@@ -127,10 +136,10 @@ if (inputType == 'Data Space'):
     # data source
     data_source = st.radio(
         "What's your Data Space source?",
-        ["CEVE/Sentinel", "SEL"],
-        captions=["CEVE - Cooperativa Eléctrica do Vale d'Este", "Smart Energy Lab"])
+        ["In-Data", "SEL"],
+        captions=["In-Data/Sentinel", "Smart Energy Lab"])
 
-    if data_source == "CEVE/Sentinel":
+    if data_source == "In-Data/Sentinel":
         endpoint = 'sentinel'
     else:
         endpoint = 'sel'
@@ -268,6 +277,12 @@ if submit_button:
 
         dataset, paramsInput = gui_data(guiBackpack)
 
+        # Abort if larger than 30-days
+        if dataset is None:
+            st.warning('The file contains data with more than 30 days. Please refresh and upload new data.')
+            st.stop()
+            sys.exit()
+
 
         ##############################################
         ##              Optimization                ##
@@ -298,7 +313,6 @@ if submit_button:
 
         st.divider()
         st.header('📊 Results')
-        st.markdown('#')
 
         relative_savings = 100 * (opt_output['optimized_load'] - opt_output['original_load']) / opt_output['original_load']
         col1, col2, col3 = st.columns(3)
@@ -317,7 +331,7 @@ if submit_button:
                     delta=(('%.2f' % pricing_diff) + '€'), delta_color='inverse')
         col6.metric("📈 Total Flexibility", total_flex)
 
-        st.markdown('#')
+        # Add plot via plotly
         st.plotly_chart(fig)
 
         json_string = json.dumps(results)
@@ -328,3 +342,76 @@ if submit_button:
             data=json_string,
         )
 
+        st.divider()
+        st.header('🏆 Ranking')
+        st.write("This section shows the top-10 results comparing several users' savings.")
+
+        # open ranking log file
+        ranking = pd.read_csv(r'.\ewh_flex\ranking.csv')
+        # convert index to rank
+        ranking.index = ranking.index + 1
+        ranking.reset_index(drop=False, inplace=True)
+        ranking = ranking.rename(columns={"index": "rank"})
+        # find current ranking
+        current_rank = ranking.loc[ranking['timestamp'] == opt_output['ranking']['timestamp'].values[0],'rank']
+
+        col7, col8, col9 = st.columns(3)
+        col7.metric("⏬ Competition Savings", (('%.2f' % opt_output['ranking']['savings']) + ' %'))
+        col8.metric("⭐ Points", (('%.2f' % opt_output['ranking']['points'])))
+        col9.metric("🏆 Rank", (('%d' % current_rank)))
+
+        # apply color coding to lines, to highlight the current (if present)
+        def color_coding(row):
+            if row.timestamp == opt_output['ranking']['timestamp'].values[0]:
+                return ['background-color:darkgreen'] * len(row)
+            else:
+                return [''] * len(row)
+
+        # Custom formatting for the 'points' column with emojis for the top 3 rows
+        def add_emoji_to_rank(val, row_index):
+            if row_index == 0:  # First row
+                return f"🥇 {val}"
+            elif row_index == 1:  # Second row
+                return f"🥈 {val}"
+            elif row_index == 2:  # Third row
+                return f"🥉 {val}"
+            else:  # Other rows, no emoji
+                return f"{val}"
+
+        # show only the top10 (if available)
+        ranking = ranking.head(10)
+        # ranking = ranking.apply(color_coding, axis=1)
+
+        st.dataframe(
+            ranking.style.format({
+                'savings': '{:.2f}',  # Keep savings column format
+                'rank': lambda val: add_emoji_to_rank(val, ranking.index[ranking['rank'] == val][0])
+            }).apply(color_coding, axis=1),
+            column_config={
+                "rank": st.column_config.NumberColumn(
+                    "Rank",
+                    help="Current Top-10 ranking position",
+                ),
+                "timestamp": st.column_config.DatetimeColumn(
+                    "Simulation Date",
+                    help="Date and time of simulation",
+                ),
+                "duration": st.column_config.TextColumn(
+                    "Duration",
+                    help="Optimized period length",
+                ),
+                "savings": st.column_config.NumberColumn(
+                    "Savings (%)",
+                    format="%f",
+                    help="Relative savings, compared to original load",
+                ),
+                "points": st.column_config.ProgressColumn(
+                    "Points",
+                    help="Ranking points (up to 100). Requires more than 1-day of simulation",
+                    format="  %f ⭐",
+                    min_value=0,
+                    max_value=100,
+                ),
+            },
+            hide_index=True,
+        )

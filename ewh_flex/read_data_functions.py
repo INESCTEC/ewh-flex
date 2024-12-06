@@ -68,12 +68,11 @@ def gui_data(guiBackpack):
         dataset['timestamp'] = pd.to_datetime(dataset['timestamp'], dayfirst=True, utc=True)
         ## verify minute resolution and missing data
         dataset = verify_1min_resolution(dataset)
-        ## verify if the data is larger than 1 month (43200 minutes)
-        try:
-            len(dataset) < 43500
-        except:
-            print("The file contains data with more than 30 days.\n")
-            sys.exit(1)
+        ## input data was larger that 30 days, abort
+        if dataset is None:
+            paramsInput = None
+            return dataset, paramsInput
+
     else:
         dataset = pd.DataFrame({'start': [], 'duration': []})
         for row in range(guiBackpack['num_rows']):
@@ -111,11 +110,13 @@ def gui_data(guiBackpack):
             # rename the two column
         price_dynamic.columns = ['timestamp', 'price']
         try:
-            price_dynamic['timestamp'] = pd.to_datetime(price_dynamic['timestamp'], utc=True)
-        except:
             price_dynamic['timestamp'] = pd.to_datetime(price_dynamic['timestamp'], dayfirst=True, utc=True)
+        except:
+            price_dynamic['timestamp'] = pd.to_datetime(price_dynamic['timestamp'], utc=True)
+    else:
+        price_dynamic = []
 
-        paramsInput['ewh_specs']['price_dynamic'] = price_dynamic
+    paramsInput['ewh_specs']['price_dynamic'] = price_dynamic
 
     return dataset, paramsInput
 
@@ -132,7 +133,14 @@ def verify_1min_resolution(dataset):
     # extract start date
     _start = df['timestamp'].iloc[0].strftime('%Y-%m-%d')
     # extract end date
-    _end = df['timestamp'].iloc[-1].strftime('%Y-%m-%d 23:59')
+    _end = df['timestamp'].iloc[-1].strftime('%Y-%m-%d %H:%M')
+
+    # verify is the dataset is larger than 30 days
+    _days = (df['timestamp'].iloc[-1]-df['timestamp'].iloc[0]).days
+    if _days >=31:
+        df = None
+        return df
+
     # create full length template, with 1-min res.
     _template = pd.DataFrame(pd.date_range(_start, _end, freq='min', tz='UTC'), columns=['timestamp'])
     # resample the original dataset to 1-min

@@ -15,7 +15,7 @@ thermoelectric water heaters based on consumption data analysis.
 ## Documentation
 
 Preliminary documentation available at the project ``docs/`` directory.
-It includes the optimization documentation including mathematical formulation.
+It includes the optimization documentation including all mathematical formulation.
 
 
 ***
@@ -268,6 +268,32 @@ resolution, the provided data should always respect the 1-min resolution, in ord
 conversion.
 
 
+
+***
+
+
+## Ranking Mechanism
+
+To grant the users a KPI, the service includes a built-in points/ranking mechanism that addresses the overall optimization
+results. For this service, the KPI weights both the simulated period and the energy savings. There are, however, some
+restrictions and other notes to the formulation:
+
+*	Since the overall service architecture works on the assumption that the water is already hot in the beginning of the
+simulation, the savings for the first 24-hours are biased by this standard. This is, since the water is already hot
+(defaulted as 60°C) the first water usages would not require the EWH to function accordingly. Hence, to remove this
+bias, the ranking system only accepts simulation results larger than 24 hours. For a simulation with a period smaller
+than 24 hours, the ranking system will assign 0 points and 0% of savings.
+
+
+* Since it would be more challenging to have better savings for larger periods of time, the period weight includes a
+linear scaling with diminishing returns using square roots. This grows more proportionally across the range but still
+rewards longer periods with diminishing returns. 
+
+
+* Apart from the numerical results shown in the ranking table, no other personal information is stored.
+
+
+* For the mathematical foundation, please check the `\docs` folder
 
 ***
 

@@ -209,6 +209,7 @@ def update_dataset_backpack(dataset, varBackpack, resample):
     price_dual_day = varBackpack['price_dual_day']
     price_dual_night = varBackpack['price_dual_night']
     price_dynamic = varBackpack['price_dynamic']
+    price_dynamic = varBackpack['price_dynamic']
     tariff = varBackpack['tariff']
     wh_min = varBackpack['wh_min']
     wh_max = varBackpack['wh_max']
@@ -239,7 +240,8 @@ def update_dataset_backpack(dataset, varBackpack, resample):
     # add inlet temperature
     dataset['temp_inlet'] = temp_inlet
     # total simulated days
-    daySim = (dataset.timestamp.max()-dataset.timestamp.min()).days+1
+    daySim = (dataset.timestamp.max() - dataset.timestamp.min()).days + 1
+    dayHourSim = (dataset.timestamp.max() - dataset.timestamp.min()) + datetime.timedelta(minutes=1)
 
     ## add price
     dataset['price1'] = price_simple
@@ -253,6 +255,9 @@ def update_dataset_backpack(dataset, varBackpack, resample):
     delta_use = list(dataset.delta_use)
     temp_inlet = list(dataset.temp_inlet)
 
+    if tariff == 0:
+        networkTariff = 0
+        networkPrice = 0
     if tariff == 1:
         networkTariff = varBackpack['tariff_simple']
         networkPrice = list(dataset.price1)
@@ -283,6 +288,7 @@ def update_dataset_backpack(dataset, varBackpack, resample):
     varBackpack['flow_rate_value'] = flow_rate_value
     # total simulated days
     varBackpack['daySim'] = daySim
+    varBackpack['dayHourSim'] = dayHourSim
     # EWH capacity (l)
     varBackpack['flow_rate'] = flow_rate
     # Flow Rate Value on T
@@ -398,6 +404,7 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
     ewh_power = varBackpack['ewh_power']
     delta_t = varBackpack['delta_t']
     daySim = varBackpack['daySim']
+    dayHourSim = varBackpack['dayHourSim']
     user = varBackpack['user']
     networkPrice = varBackpack['networkPrice']
     networkTariff = varBackpack['networkTariff']
@@ -420,6 +427,7 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
     regressor_belowSet_m_temp = varBackpack['regressor_belowSet_m_temp']
     regressor_belowSet_m_delta = varBackpack['regressor_belowSet_m_delta']
     regressor_belowSet_b = varBackpack['regressor_belowSet_b']
+    tariff = varBackpack['tariff']
 
     ##############################################
     ##           DECISION VARIABLES             ##
@@ -443,7 +451,8 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
     binAux = [LpVariable(f'binAux_{t:03d}', cat=LpBinary) for t in T]
     # Pricing of that specific energy usage
     energyCost = [LpVariable(f'price_{t:03d}', lowBound=0) for t in T]
-
+    if tariff != 0:
+        energyCost = [LpVariable(f'price_{t:03d}', lowBound=0) for t in T]
 
     ##############################################
     ##           DEFINING THE MILP              ##
@@ -452,8 +461,10 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
     # Create MIlP Instance
     milp = LpProblem('Thermo_MILP', LpMinimize)
     # Define the objective function
-    milp += lpSum(energyCost[t] * 100 + costComfort[t] * 1000 for t in T), 'Objective_Function'
-
+    if tariff == 0:
+        milp += lpSum(w_in[t] * 100 + costComfort[t] * 1000 for t in T), 'Objective_Function'
+    else:
+        milp += lpSum(energyCost[t] * 100 + costComfort[t] * 1000 for t in T), 'Objective_Function'
 
     ##############################################
     ##              CONSTRAINTS                 ##
@@ -468,7 +479,8 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
         # Eq. (2)
         milp += w_in[t] == ewh_power * delta_t * delta_in[t] * (delta_t*60) , f'Constraint_2_{t:03d}'
         # Eq. (3) Pricing
-        milp += energyCost[t] == delta_in[t] * ewh_power * delta_t * networkPrice[t] + networkTariff * (delta_t/24), f'Constraint_3_{t:03d}'
+        if tariff != 0:
+            milp += energyCost[t] == delta_in[t] * ewh_power * delta_t * networkPrice[t] + networkTariff * (delta_t/24), f'Constraint_3_{t:03d}'
         # Eq. (4)
         if t == 0:
             milp += temp[t] == ewh_start_temp, f'Constraint_4_{t:03d}'
@@ -566,6 +578,9 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
         if re.search(f'price_', v.name):
             opt_diagrams.loc[temp_idx,'price'] = v.varValue
 
+    # add null price for energy based optimization
+    if tariff == 0:
+        opt_diagrams['price'] = 0
     # fix delta_in very low and close to 1 values
     opt_diagrams.loc[opt_diagrams['delta_in']<0.001,'delta_in'] = 0
     opt_diagrams.loc[opt_diagrams['delta_in']>0.999,'delta_in'] = 1
@@ -627,5 +642,55 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
     opt_output['savings_cost'] = original_price - optimized_price
     opt_output['savings_energy'] = original_load - optimized_load
     opt_output['opt_diagrams'] = opt_diagrams
+
+
+    ### Competition ranking/KPI
+
+    ## create new load diagrams disconsidering first day
+    original_load_kpi = ((dataset['load'] / 1000) * (1 / 60))[1440:]
+    opt_output['original_load_kpi'] = original_load_kpi.sum()
+    if original_load_kpi.empty == True:
+        # create ranking variable to add to overall ranking file,
+        # since it is a very small dataset, do not consider to global ranking
+        _timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        _ranking = pd.DataFrame([[_timestamp, dayHourSim, 0, 0]])
+        _ranking.columns = ['timestamp', 'duration', 'savings', 'points']
+        opt_output['ranking'] = _ranking
+    else:
+        opt_output['optimized_load_kpi'] = (opt_diagrams['delta_in'] * ewh_power * delta_t)[1440:].sum()
+        opt_output['savings_energy_kpi'] = opt_output['original_load_kpi'] - opt_output['optimized_load_kpi']
+        opt_output['relative_savings_kpi'] = 100 * opt_output['savings_energy_kpi'] / opt_output['original_load_kpi']
+
+        # a scaling factor for overall points (e.g., 100)
+        scaling_factor = 100
+        # maximum period length (30 days in minutes)
+        max_period = 30 * 24 * 60
+        # simulated period in minutes
+        simulated_period = dayHourSim.total_seconds() / 60
+        # relative savings/period weight (defaulted as 0.7/0.3)
+        savings_w = 0.5
+        period_w = 0.5
+        # relative savings
+        relative_savings_kpi = round(opt_output['relative_savings_kpi'], 2)
+
+        points = scaling_factor * (savings_w * relative_savings_kpi / 100 + period_w * (
+                    (np.sqrt(simulated_period)) / (np.sqrt(max_period))))
+        points = round(points, 2)
+
+        # create ranking variable to add to overall ranking file
+        _timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        _ranking = pd.DataFrame([[_timestamp, dayHourSim, relative_savings_kpi, points]])
+        _ranking.columns = ['timestamp', 'duration', 'savings', 'points']
+        opt_output['ranking'] = _ranking
+
+    # open ranking log file
+    ranking = pd.read_csv(r'.\ewh_flex\ranking.csv')
+    # update ranking file
+    ranking = pd.concat([ranking, _ranking], ignore_index=True)
+    # order by points
+    ranking = ranking.sort_values(by='points', ascending=False)
+    ranking.reset_index(inplace=True, drop=True)
+    # write
+    ranking.to_csv(r'.\ewh_flex\ranking.csv', index=False)
 
     return opt_output
