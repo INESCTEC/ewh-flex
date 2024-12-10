@@ -9,6 +9,7 @@ import math
 from sklearn.linear_model import LinearRegression
 import datetime
 from itertools import product
+import os
 
 from .ewh_power_functions import ewh_power_detection
 from .auxiliary_functions import fillDefaults
@@ -684,13 +685,17 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
         opt_output['ranking'] = _ranking
 
     # open ranking log file
-    ranking = pd.read_csv(r'.\ewh_flex\ranking.csv')
+    # Get the absolute path to the CSV file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(current_dir, '..', 'ewh_flex', 'ranking.csv')
+    ranking = pd.read_csv(csv_path)
+
     # update ranking file
     ranking = pd.concat([ranking, _ranking], ignore_index=True)
     # order by points
     ranking = ranking.sort_values(by='points', ascending=False)
     ranking.reset_index(inplace=True, drop=True)
     # write
-    ranking.to_csv(r'.\ewh_flex\ranking.csv', index=False)
+    ranking.to_csv(csv_path, index=False)
 
     return opt_output
