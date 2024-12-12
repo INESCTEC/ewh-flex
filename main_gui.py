@@ -348,7 +348,12 @@ if submit_button:
         st.write("This section shows the top-10 results comparing several users' savings.")
 
         # open ranking log file
-        ranking = pd.read_csv(r'.\ewh_flex\ranking.csv')
+        # Get the absolute path to the CSV file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(current_dir, '.', 'ewh_flex', 'ranking.csv')
+        ranking = pd.read_csv(csv_path)
+        # open ranking log file
+        ranking = pd.read_csv(csv_path)
         # convert index to rank
         ranking.index = ranking.index + 1
         ranking.reset_index(drop=False, inplace=True)
