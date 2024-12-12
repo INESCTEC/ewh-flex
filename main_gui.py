@@ -291,7 +291,7 @@ if submit_button:
 
         # Select Solver between 'HiGHS' (recommended) and 'CBC'. HiGHS solver requires 'solverPath' to respective binaries
         # Select resample between 'no','15m','1h'
-        opt_output = ewh_optimization(paramsInput, dataset, resample='no', optSolver='HiGHS', solverPath=r'./highs/bin/highs.exe')
+        opt_output = ewh_optimization(paramsInput, dataset, resample='no', optSolver='HiGHS', solverPath=r'./HiGHS/bin/highs.exe')
 
         ##############################################
         ##              Plot Results                ##
