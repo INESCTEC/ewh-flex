@@ -13,7 +13,9 @@ import pandas as pd
 ##          Streamlit Main Page             ##
 ##############################################
 
-
+st.set_page_config(
+    page_title="ewh-flex",
+    page_icon='./docs/figures/inesctec_small.png')
 
 st.image('./docs/figures/inesctec.png')
 st.title('EWH Optimization and Flexibility')
@@ -136,8 +138,8 @@ if (inputType == 'Data Space'):
     # data source
     data_source = st.radio(
         "What's your Data Space source?",
-        ["In-Data", "SEL"],
-        captions=["In-Data/Sentinel", "Smart Energy Lab"])
+        ["In-Data/Sentinel", "SEL"],
+        captions=["In-Data", "Smart Energy Lab"])
 
     if data_source == "In-Data/Sentinel":
         endpoint = 'sentinel'
@@ -282,7 +284,6 @@ if submit_button:
             st.warning('The file contains data with more than 30 days. Please refresh and upload new data.')
             st.stop()
             sys.exit()
-
 
         ##############################################
         ##              Optimization                ##
