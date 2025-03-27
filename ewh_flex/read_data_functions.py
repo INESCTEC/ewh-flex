@@ -5,6 +5,8 @@
 import pandas as pd
 import json
 import sys
+import re
+import datetime
 from .dataspace_connection import dataspace_connection
 
 
@@ -50,10 +52,32 @@ def gui_data(guiBackpack):
 
     if (inputType == 'Data Space'):
         endpoint = guiBackpack['endpoint']
-        # request data from DataSpace
-        response = dataspace_connection(guiBackpack)
-        # parse data depending on endpoint
-        dataset = data_space_parser(response, endpoint)
+
+        if endpoint == 'sel':
+            datetime_start = guiBackpack['datetime_start']
+            datetime_end = guiBackpack['datetime_end']
+            # create a list of dates to request from SEL endpoint
+            datetime_period = [(datetime_start + datetime.timedelta(days=i)).strftime('%Y-%m-%d')
+                           for i in range((datetime_end - datetime_start).days + 1)]
+            # extract all days of data
+            # Initialize an empty DataFrame before the loop
+            dataset = pd.DataFrame()
+            for day in datetime_period:
+                # create a temp copy of guiBackpack
+                _guiBackpack = guiBackpack.copy()
+                # replace start_date with current day
+                guiBackpack['datetime_start'] = day
+                # request data from DataSpace for current day
+                response = dataspace_connection(guiBackpack)
+                # parse data depending on endpoint
+                _dataset = data_space_parser(response, endpoint)
+                # Append _dataset to dataset
+                dataset = pd.concat([dataset, _dataset], ignore_index=True)
+        else: # INDATA
+            # request data from DataSpace
+            response = dataspace_connection(guiBackpack)
+            # parse data depending on endpoint
+            dataset = data_space_parser(response, endpoint)
         ## verify minute resolution and missing data
         dataset = verify_1min_resolution(dataset)
 
@@ -131,16 +155,14 @@ def verify_1min_resolution(dataset):
     # order by datetime
     df = df.sort_values(by='timestamp', ascending=True).reset_index(drop=True)
     # extract start date
-    _start = df['timestamp'].iloc[0].strftime('%Y-%m-%d')
+    _start = df['timestamp'].iloc[0].strftime('%Y-%m-%d %H:%M')
     # extract end date
     _end = df['timestamp'].iloc[-1].strftime('%Y-%m-%d %H:%M')
-
     # verify is the dataset is larger than 30 days
     _days = (df['timestamp'].iloc[-1]-df['timestamp'].iloc[0]).days
     if _days >=31:
         df = None
         return df
-
     # create full length template, with 1-min res.
     _template = pd.DataFrame(pd.date_range(_start, _end, freq='min', tz='UTC'), columns=['timestamp'])
     # resample the original dataset to 1-min
@@ -210,8 +232,10 @@ def verify_1min_resolution(dataset):
     return df
 
 def data_space_parser(response, endpoint):
-    # convert to dataframe
-    df = pd.DataFrame(response.json()["data"])
+    if endpoint == 'sel':
+        df = pd.DataFrame(response.json()["data"]['EWH'])
+    else:
+        df = pd.DataFrame(response.json()["data"])
     # convert to datetime
     df['datetime'] = pd.to_datetime(df['datetime'], utc=True)
     # make all seconds 0, for duplicate detection
@@ -219,7 +243,10 @@ def data_space_parser(response, endpoint):
     # remove duplicates
     df = df.drop_duplicates(subset='datetime', keep="last")
     # retain only necessary columns
-    df = df[['datetime', 'value']]
+    if endpoint == 'sel':
+        df = df[['datetime', 'energy']]
+    else:
+        df = df[['datetime', 'value']]
     # rename the two column
     df.columns = ['timestamp', 'load']
     if endpoint == 'sel':

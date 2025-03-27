@@ -24,7 +24,7 @@ dataset, paramsInput = read_data(paramsInput_filePath, dataset_filePath)
 
 # Select Solver between 'HiGHS' (recommended) and 'CBC'. HiGHS solver requires 'solverPath' to respective binaries
 # Select resample between 'no','15m','1h'
-opt_output = ewh_optimization(paramsInput, dataset, resample='no', optSolver='HiGHS', solverPath=r'../HiGHS/bin/highs.exe')
+opt_output = ewh_optimization(paramsInput, dataset, resample='1h', optSolver='HiGHS', solverPath=r'../HiGHS/bin/highs.exe')
 
 
 

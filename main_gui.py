@@ -139,11 +139,11 @@ if (inputType == 'Data Space'):
     # data source
     data_source = st.radio(
         "What's your Data Space source?",
-        ["In-Data/Sentinel", "SEL"],
-        captions=["In-Data", "Smart Energy Lab"])
+        ["In-Data", "SEL"],
+        captions=["In-Data/Sentinel", "Smart Energy Lab"])
 
-    if data_source == "In-Data/Sentinel":
-        endpoint = 'sentinel'
+    if data_source == "In-Data":
+        endpoint = 'indata'
     else:
         endpoint = 'sel'
 
@@ -166,7 +166,7 @@ if (inputType == 'Data Space'):
     if len(simulation_period) > 1:
         datetime_start = simulation_period[0]
         datetime_end = simulation_period[1]
-        if (((datetime_end - datetime_start).days < 1) | ((datetime_end - datetime_start).days > 29)):
+        if ((((datetime_end - datetime_start).days+1) < 1) | ((datetime_end - datetime_start).days > 30)):
             st.error("Select a date range within 1-30 days")
     else:
         st.error("Select a date range (missing end date)")
@@ -245,7 +245,9 @@ if inputType == 'Data Space':
     guiBackpack['endpoint'] = endpoint
     guiBackpack['inputType'] = 'Data Space'
     guiBackpack['user_id'] = user_id
+if 'datetime_start' in locals():
     guiBackpack['datetime_start'] = datetime_start
+if 'datetime_end' in locals():
     guiBackpack['datetime_end'] = datetime_end
 if inputType == 'Upload JSON/CSV':
     guiBackpack['inputType'] = 'Upload JSON/CSV'
