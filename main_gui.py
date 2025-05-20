@@ -203,12 +203,12 @@ elif (inputType == 'Hot-Water Usage Example'):
 
 if 'dataset' in locals():
     if dataset is not None:
-        if ((dataset.type == 'application/json') | (dataset.type == 'text/csv')) == False:
+        if ((dataset.type == 'application/json') | (dataset.type == 'text/csv') | (dataset.type == 'application/vnd.ms-excel')) == False:
             st.error(f"Please upload the dataset in JSON or CSV format!")
 
 if 'price_dynamic' in locals():
     if price_dynamic is not None:
-        if ((price_dynamic.type == 'application/json') | (price_dynamic.type == 'text/csv')) == False:
+        if ((price_dynamic.type == 'application/json') | (price_dynamic.type == 'text/csv') | (dataset.type == 'application/vnd.ms-excel')) == False:
             st.error(f"Please upload the dataset in JSON or CSV format!")
 
 
@@ -217,7 +217,7 @@ with st.form(key='form'):
         if dataset is None:
             submit_button = st.form_submit_button("Run", disabled=True)
         else:
-            if ((dataset.type == 'application/json') | (dataset.type == 'text/csv')) == False:
+            if ((dataset.type == 'application/json') | (dataset.type == 'text/csv') | (dataset.type == 'application/vnd.ms-excel')) == False:
                 submit_button = st.form_submit_button("Run", disabled=True)
             else:
                 submit_button = st.form_submit_button("Run", on_click=disable, disabled=st.session_state.disabled)
@@ -258,7 +258,7 @@ if 'dataset' in locals():
     if dataset is not None:
         if dataset.type == 'application/json':
             guiBackpack['file_type'] = 'json'
-        elif dataset.type == 'text/csv':
+        elif (dataset.type == 'text/csv') | (dataset.type == 'application/vnd.ms-excel'):
             guiBackpack['file_type'] = 'csv'
 guiBackpack['session_state'] = st.session_state
 if 'num_rows' in locals():
