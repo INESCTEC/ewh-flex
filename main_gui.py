@@ -177,29 +177,40 @@ elif (inputType == 'Upload JSON/CSV'):
     load_diagram_exists = 1
 
 elif (inputType == 'Hot-Water Usage Example'):
-    load_diagram_exists = 0
+    # load or calendar input
+    usageType = st.radio(' ',
+                         ('Hot-Water Usage CSV',
+                          'Hot-Water Usage 24-hour Example'),
+                         captions=("Upload a CSV with the hot-water usage calendar with start and duration (minutes) variables",
+                                   "Fill in a daily basis 24-hours hot water usage typical calendar"),
+                         label_visibility="collapsed")
 
-    usage_data = st.columns(2)
-    # a selection for the user to specify the number of rows
-    num_rows = st.slider('Number of Hot-Water Usages', min_value=1, max_value=10)
-    # columns to lay out the inputs
-    grid = st.columns(2)
+    if (usageType == 'Hot-Water Usage CSV'):
+        dataset = st.file_uploader("Choose a file", key='dataset')
+        load_diagram_exists = 3
 
-    # Function to create a row of widgets (with row number input to assure unique keys)
-    def add_row(row):
-        with grid[0]:
-            st.text_input('Start Period (HH\:MM)', key=f'start_{row}', value='08:00')
-            if is_valid_time_format(st.session_state[f'start_{row}']) == False:
-                st.error(f"Please insert a valid starting time value (HH\:MM).")
-        with grid[1]:
-            st.number_input('Duration (minutes)', step=1, key=f'duration_{row}', value=5)
-            if not ((st.session_state[f'duration_{row}'] > 0) & (st.session_state[f'duration_{row}'] <= 20)):
-                st.error(f"Please insert a valid duration between 1 and 20 minutes.")
+    elif (usageType == 'Hot-Water Usage 24-hour Example'):
+        load_diagram_exists = 0
+        usage_data = st.columns(2)
+        # a selection for the user to specify the number of rows
+        num_rows = st.slider('Number of Hot-Water Usages', min_value=1, max_value=10)
+        # columns to lay out the inputs
+        grid = st.columns(2)
 
+        # Function to create a row of widgets (with row number input to assure unique keys)
+        def add_row(row):
+            with grid[0]:
+                st.text_input('Start Period (HH\:MM)', key=f'start_{row}', value='08:00')
+                if is_valid_time_format(st.session_state[f'start_{row}']) == False:
+                    st.error(f"Please insert a valid starting time value (HH\:MM).")
+            with grid[1]:
+                st.number_input('Duration (minutes)', step=1, key=f'duration_{row}', value=5)
+                if not ((st.session_state[f'duration_{row}'] > 0) & (st.session_state[f'duration_{row}'] <= 20)):
+                    st.error(f"Please insert a valid duration between 1 and 20 minutes.")
 
-    # Loop to create rows of input widgets
-    for r in range(num_rows):
-        add_row(r)
+        # Loop to create rows of input widgets
+        for r in range(num_rows):
+            add_row(r)
 
 if 'dataset' in locals():
     if dataset is not None:

@@ -98,12 +98,18 @@ def gui_data(guiBackpack):
             return dataset, paramsInput
 
     else:
-        dataset = pd.DataFrame({'start': [], 'duration': []})
-        for row in range(guiBackpack['num_rows']):
-            _start = pd.to_datetime(guiBackpack['session_state'][f'start_{row}'])
-            _duration = guiBackpack['session_state'][f'duration_{row}']
-            dataset.loc[len(dataset)] = [_start, _duration]
-            del _start, _duration
+        if guiBackpack['load_diagram_exists'] == 0:
+            dataset = pd.DataFrame({'start': [], 'duration': []})
+            for row in range(guiBackpack['num_rows']):
+                _start = pd.to_datetime(guiBackpack['session_state'][f'start_{row}'])
+                _duration = guiBackpack['session_state'][f'duration_{row}']
+                dataset.loc[len(dataset)] = [_start, _duration]
+                del _start, _duration
+        if guiBackpack['load_diagram_exists'] == 3:
+            dataset = pd.read_csv(guiBackpack['dataset'])
+            dataset['start'] = pd.to_datetime(dataset['start'])
+            # restore to 0
+            guiBackpack['load_diagram_exists'] = 0
 
     ### input params
     paramsInput = {
