@@ -607,8 +607,8 @@ def ewh_solver(dataset, varBackpack, optSolver = 'HiGHS', solverPath=None):
     ## optimized price
     optimized_price = sum(opt_diagrams['price'])
     ## original load
-    original_load = (dataset['load'].sum()/1000) * (delta_t/60)
-    original_load_list = (dataset['load'] / 1000) * (delta_t/60)
+    original_load = (dataset['load'].sum()/1000) * (delta_t)
+    original_load_list = (dataset['load'] / 1000) * (delta_t)
     ## original price
     ## network price per minute
     networkTariff_minute = networkTariff * (delta_t/24)
