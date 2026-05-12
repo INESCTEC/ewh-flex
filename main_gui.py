@@ -124,12 +124,12 @@ st.write('* EWH daily usage example with periods and durations of hot-water usag
 
 # load or calendar input
 inputType = st.radio('What kind of input do you want to provide?',
-                     ('Data Space',
-                      'Upload JSON/CSV',
-                      'Hot-Water Usage Example'),
-                     captions = ("Source EWH Load Diagram data with 1-min resolution from the Data Space",
-                                 "Upload a JSON or CSV with the EWH Load Diagram Time-Series with 1-min resolution",
-                                 "I don't have a Load Diagram file. Fill in a daily basis typical calendar"))
+                     ('Upload JSON/CSV',
+                      'Hot-Water Usage Example',
+                      'Data Space'),
+                     captions=("Upload a JSON or CSV with the EWH Load Diagram Time-Series with 1-min resolution",
+                               "I don't have a Load Diagram file. Fill in a daily basis typical calendar",
+                               "Source EWH Load Diagram data with 1-min resolution from the Data Space"))
 
 st.divider()
 
