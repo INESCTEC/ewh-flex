@@ -1,34 +1,8 @@
-Copyright (C) 2023, INESC TEC 
+Copyright (C) 2023–2026 INESC TEC and contributors
 
-EWH Flex: This tool focuses on optimizing the functioning calendar of thermoelectric water heaters (EWH) through the analysis of the EWH consumption diagram. Ensures the delivery of consumer-defined comfort levels, subject to certain constraints, while simultaneously minimizing operational costs or total energy consumption. 
+This software is licensed under the GNU Affero General Public License version 3 (AGPL-3.0).
 
-This software is authored by:
-José Pedro Ferreira Pelicano Paulos
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
-You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-This program makes use and is distributed with the following libraries:
-* NumPy (https://github.com/numpy/numpy)
-* matplotlib (https://github.com/matplotlib/matplotlib)
-* pandas (https://github.com/pandas-dev/pandas)
-* plotly (https://github.com/plotly/plotly.py)
-* PuLP (https://github.com/coin-or/pulp)
-* pytest (https://github.com/pytest-dev/pytest)
-* scikit-learn (https://github.com/scikit-learn/scikit-learn)
-* Streamlit (https://github.com/streamlit/streamlit)
-* tsg-client (https://github.com/CPES-Power-and-Energy-Systems/tsg-client)
-
-
-A commercial license is also available for use in industrial projects and collaborations that do not wish to use the AGPL v3 license. 
-To obtain the commercial license please contact the INESC TEC Technology Licensing Office (TLO) at info.sal@inesctec.pt, or 
-Campus da Faculdade de Engenharia da Universidade do Porto 
-Rua Dr. Roberto Frias 
-4200-465 Porto 
-Portugal 
-
-If needed SAL (INESC TEC Technology Licensing Office - TLO) can assist with all the legal details regarding the licensing agreement 
+A commercial licence is also available for uses that are not compatible with the terms of the AGPL-3.0. For commercial licensing, please contact: tto@inesctec.pt
 
 
 ________________________________________
