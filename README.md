@@ -1,6 +1,3 @@
-![INESC TEC](docs/figures/inesctec.png)
-***
-
 # EWH Optimization and Flexibility
 
 This tool focuses on optimizing the functioning calendar of thermoelectric water heaters (EWH) through the 
@@ -303,3 +300,12 @@ If you have any questions regarding this project, please contact the following p
 
 **Developers (SW source code / methodology questions)**:
 * José Paulos (jose.paulos@inesctec.pt)
+
+***
+
+## Acknowledgements
+
+This work was developed within the following projects:
+
+* **ENPOWER**: This project has received funding from the European Union’s Horizon Europe research and innovation programme under grant agreement No 101096354.
+* **ENERSHARE**: This project has received funding from the European Union’s Horizon Europe research and innovation programme under grant agreement No 101069831.
