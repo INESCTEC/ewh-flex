@@ -1,0 +1,21 @@
+name: Mirror to Enpower-project
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    # Only run in the source repo, not in the mirrored copy
+    if: github.repository == 'INESCTEC/ewh-flex'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Push main to Enpower-project/EWH-Digital-Twin
+        env:
+          TOKEN: ${{ secrets.ENPOWER_MIRROR_TOKEN }}
+        run: git push --force "https://x-access-token:${TOKEN}@github.com/Enpower-project/EWH-Digital-Twin.git" HEAD:main
